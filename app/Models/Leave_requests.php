@@ -20,7 +20,8 @@ class Leave_requests extends Model
         'reason',
         'status',
         'approved_by',
-        'approved_at'
+        'approved_at',
+        'comments'
     ];
 
  
