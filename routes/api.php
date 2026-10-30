@@ -29,14 +29,10 @@ Route::middleware('auth:sanctum')->group(function(){
 
     // Admin only routes
     Route::middleware('role:admin') -> group(function(){
-        Route::apiResource('departments', DepartmentController::class);
+        
         // Route::post('/departments', [DepartmentController::class, 'store']);
         // Route::put('/departments/{id}', [DepartmentController::class, 'update']);
         // Route::delete('/departments/{id}', [DepartmentController::class, 'destroy']);
-
-        Route::post('/employees', [EmployeeController::class, 'store']);
-        Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
-        Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
 
         // maangers list
         Route::get('/managers', [EmployeeController::class,'managers']);
@@ -46,6 +42,16 @@ Route::middleware('auth:sanctum')->group(function(){
 
     // admin and manager routes
     Route::middleware('role:admin,manager')->group(function(){
+        Route::apiResource('departments', DepartmentController::class);
+
+
+        Route::post('/employees', [EmployeeController::class, 'store']);
+        Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
+        Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+
+    
+        Route::post('/deactivate/{id}',[AuthController::class,'deactivate']);
+
         Route::get('/employees', [EmployeeController::class, 'index']);
         Route::post('/projects', [ProjectController::class, 'store']);
         Route::put('/projects/{id}', [ProjectController::class, 'update']);
