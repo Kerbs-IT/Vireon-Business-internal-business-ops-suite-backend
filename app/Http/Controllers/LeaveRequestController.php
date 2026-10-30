@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LeaveRequest;
 use App\Models\Leave_requests;
+use Exception;
 use Illuminate\Http\Request;
 
 class LeaveRequestController extends Controller
@@ -19,9 +21,18 @@ class LeaveRequestController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(LeaveRequest $request)
     {
         //
+        try {
+            $department = Leave_requests::create($request->validated());
+
+            return response()->json([
+                'message' => 'Leave Request successfully created.'
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
         return response()->json(['message' => 'Leave Requests created (stub)']);
     }
 
@@ -37,10 +48,17 @@ class LeaveRequestController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Leave_requests $leave_requests)
+    public function update(LeaveRequest $request, Leave_requests $leaveRequest)
     {
-        //
-        return response()->json(['message' => 'Leave Requests created (stub)']);
+        try{
+            $leaveRequest->update($request->validated());
+
+            return response()->json(['leaveRequest' => $leaveRequest],200);
+            
+        }catch(Exception $e){
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+        
     }
 
     /**

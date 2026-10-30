@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
@@ -19,10 +20,15 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        //
+        // get the current user
+        
+
         try{
             $employees = User::with('department', 'role')
-                ->where('role_id', 3)
+                ->where('role_id',"!=" ,1)
+                ->when(Auth::user()-> role_id == 2, function ($query) {
+                    $query -> where('department_id', Auth::user()-> department_id);
+                })
                 ->get();
 
 
