@@ -58,10 +58,21 @@ Route::middleware('auth:sanctum')->group(function(){
         Route::post('/projects/{id}/members', [ProjectController::class, 'manageMembers']);
         Route::post('/tasks', [TaskController::class, 'store']);
         Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
-        Route::put('/leave-requests/{id}/approve', [LeaveRequestController::class, 'approve']);
-        Route::put('/leave-requests/{id}/reject', [LeaveRequestController::class, 'reject']);
+        Route::put('/leave-requests/{leave_requests}/approve', [LeaveRequestController::class, 'approve']);
+        Route::put('/leave-requests/{leave_requests}/reject', [LeaveRequestController::class, 'reject']);
         // roles
         Route::get('/roles',[RolesController::class,'index']);
+
+        // team request
+        Route::get('/team-leave-requests',[LeaveRequestController::class, 'teamLeaveRequest']);
+        ROute::get('/leave-calendar',[LeaveRequestController::class,'calendar']);
+    });
+
+    Route::middleware('role:admin,manager,employee')-> group(function(){
+        Route::get('/my-leave-request',[LeaveRequestController::class,'index']);
+        Route::apiResource('leaveRequests',LeaveRequestController::class);
+
+        Route::get('/leave-types', [LeaveTypeController::class,'index']);
     });
 
 

@@ -13,7 +13,8 @@ class LeaveTypeController extends Controller
     public function index()
     {
         //
-        return response()->json(['message' => 'Leave type created (stub)']);
+        $leaveType = Leave_types::select('id', 'name')->get();
+        return response()->json($leaveType);
     }
 
     /**

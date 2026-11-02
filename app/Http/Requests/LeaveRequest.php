@@ -24,15 +24,10 @@ class LeaveRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
-            'user_id' => ['required', 'exists:users,id'],
-            'leave_type_id' => ['required','integer','exists:leave_types,id'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date'],
-            'reason' => ['required','string'],
-            'status' => ['required',Rule::in(['pending','approved','rejected'])],
-            'approved_by' => ['nullable','integer','exists:users,id'],
-            'comments' => ['nullable','string']
+            'leave_type_id' => ['required', 'integer', 'exists:leave_types,id'],
+            'start_date'    => ['required', 'date', 'after_or_equal:today'],
+            'end_date'      => ['required', 'date', 'after_or_equal:start_date'],
+            'reason'        => ['required', 'string', 'max:255'],
         ];
     }
 }
