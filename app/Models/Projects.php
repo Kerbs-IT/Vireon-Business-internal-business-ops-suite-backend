@@ -32,7 +32,9 @@ class Projects extends Model
     // this is for the project members
     // in order to fetch who are the users in the project
 
-    public function members(){
-        return $this-> belongsToMany(User::class,'project_members','project_id','user_id');
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'project_members', 'project_id', 'user_id')
+            ->withTimestamps(); // only if the pivot table has created_at/updated_at
     }
 }
