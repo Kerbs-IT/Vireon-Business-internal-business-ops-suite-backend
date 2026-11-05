@@ -53,9 +53,10 @@ Route::middleware('auth:sanctum')->group(function(){
         Route::post('/deactivate/{id}',[AuthController::class,'deactivate']);
 
         Route::get('/employees', [EmployeeController::class, 'index']);
-        Route::post('/projects', [ProjectController::class, 'store']);
-        Route::put('/projects/{id}', [ProjectController::class, 'update']);
-        Route::post('/projects/{id}/members', [ProjectController::class, 'manageMembers']);
+        Route::apiResource('projects',ProjectController::class);
+        // Route::post('/projects', [ProjectController::class, 'store']);
+        // Route::put('/projects/{id}', [ProjectController::class, 'update']);
+        // Route::post('/projects/{id}/members', [ProjectController::class, 'manageMembers']);
         Route::post('/tasks', [TaskController::class, 'store']);
         Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
         Route::put('/leave-requests/{leave_requests}/approve', [LeaveRequestController::class, 'approve']);
