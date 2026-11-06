@@ -82,10 +82,15 @@ class ProjectController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Projects $projects)
+    public function show($id)
     {
-        //
-        return response()->json(['message' => 'Projects created (stub)']);
+        try {
+            $project = Projects::with('members')->where('id', $id)->firstOrFail();
+
+            return response()->json($project, 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage() ?? 'Unable to get the project details'], 403);
+        }
     }
 
     /**
@@ -128,14 +133,34 @@ class ProjectController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Projects $projects)
+    public function destroy(Request $request, Projects $project)
     {
-        //
-        return response()->json(['message' => 'Projects created (stub)']);
+        try {
+            $user = $request->user();
+
+            if ($user->role_id == 3) {
+                return response()->json(['message' => 'Not authorized.'], 403);
+            }
+            if ($user->role_id == 2 && $project->created_by != $user->id) {
+                return response()->json(['message' => 'You can only delete your own projects.'], 403);
+            }
+
+            DB::transaction(function () use ($project) {
+                $project->tasks()->delete(); // soft deletes each task
+                $project->delete();
+            });
+
+            return response()->json(['message' => 'Project deleted.']);
+        } catch (\Throwable $e) {
+            Log::error('Delete project failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Unable to delete the project.'], 500);
+        }
     }
 
     public function manageMembers(Request $request)
     {
         return response()->json(['message' => 'Projects created (stub)']);
     }
+
+   
 }
