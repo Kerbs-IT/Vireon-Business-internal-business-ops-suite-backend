@@ -3,11 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Override;
 
 class Projects extends Model
 {
     //
+
+    use SoftDeletes;
+
     protected $fillable = [
         'name',
         'description',
@@ -36,5 +40,9 @@ class Projects extends Model
     {
         return $this->belongsToMany(User::class, 'project_members', 'project_id', 'user_id')
             ->withTimestamps(); // only if the pivot table has created_at/updated_at
+    }
+
+    public function tasks(){
+        return $this-> hasMany(Tasks::class,'project_id');
     }
 }
