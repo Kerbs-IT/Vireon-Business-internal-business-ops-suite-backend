@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Tasks extends Model
 {
     //
+    use SoftDeletes;
     protected $fillable = [
         'project_id',
         'title',
@@ -23,5 +25,8 @@ class Tasks extends Model
 
     public function assignee(){
         return $this -> belongsTo(User::class,'assigned_to','id');
+    }
+    public function comments(){
+        return $this->hasMany(Comments::class,'task_id')->oldest();
     }
 }

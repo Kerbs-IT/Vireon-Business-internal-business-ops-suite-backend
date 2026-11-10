@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LeaveRequestController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\RolesController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Laravel\Prompts\Task;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -55,10 +57,17 @@ Route::middleware('auth:sanctum')->group(function(){
         Route::get('/employees', [EmployeeController::class, 'index']);
         Route::apiResource('projects',ProjectController::class);
         // Route::post('/projects', [ProjectController::class, 'store']);
-        // Route::put('/projects/{id}', [ProjectController::class, 'update']);
+
         // Route::post('/projects/{id}/members', [ProjectController::class, 'manageMembers']);
-        Route::post('/tasks', [TaskController::class, 'store']);
-        Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
+        Route::get('/projects/{project}/tasks', [TaskController::class, 'index']);
+        Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus']);
+        Route::apiResource('tasks',TaskController::class);
+        // Route::post('/tasks', [TaskController::class, 'store']);
+        // Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
+
+        Route::post('/tasks/{task}/comments', [CommentController::class, 'store']);
+        Route::put('/comments/{comment}', [CommentController::class, 'update']);
+
         Route::put('/leave-requests/{leave_requests}/approve', [LeaveRequestController::class, 'approve']);
         Route::put('/leave-requests/{leave_requests}/reject', [LeaveRequestController::class, 'reject']);
         // roles
