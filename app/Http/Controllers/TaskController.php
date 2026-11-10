@@ -163,5 +163,18 @@ class TaskController extends Controller
             return response()->json(['message' => 'Unable to delete the project task.'], 500);
         }
     }
+
+    // this function is specifically for kanban drag n drop
+
+    public function updateStatus(Request $request, Tasks $task)
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'in:todo,in_progress,review,done'],
+        ]);
+
+        $task->update($validated);
+
+        return response()->json($task->fresh());
+    }
    
 }

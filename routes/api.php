@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function(){
 
         // Route::post('/projects/{id}/members', [ProjectController::class, 'manageMembers']);
         Route::get('/projects/{project}/tasks', [TaskController::class, 'index']);
+        Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus']);
         Route::apiResource('tasks',TaskController::class);
         // Route::post('/tasks', [TaskController::class, 'store']);
         // Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
