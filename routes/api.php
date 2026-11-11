@@ -7,6 +7,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Http\Request;
@@ -75,7 +76,10 @@ Route::middleware('auth:sanctum')->group(function(){
 
         // team request
         Route::get('/team-leave-requests',[LeaveRequestController::class, 'teamLeaveRequest']);
-        ROute::get('/leave-calendar',[LeaveRequestController::class,'calendar']);
+        Route::get('/leave-calendar',[LeaveRequestController::class,'calendar']);
+
+        // reports
+        Route::get('/report/metric-card',[ReportsController::class, 'metricCard']);
     });
 
     Route::middleware('role:admin,manager,employee')-> group(function(){
