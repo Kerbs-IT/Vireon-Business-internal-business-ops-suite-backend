@@ -80,6 +80,13 @@ Route::middleware('auth:sanctum')->group(function(){
 
         // reports
         Route::get('/report/metric-card',[ReportsController::class, 'metricCard']);
+        Route::get('/report/project-completion',[ReportsController::class,'projectCompletion']);
+        Route::get('/report/task-by-status',[ReportsController::class, 'tasksByStatus']);
+        Route::get('/report/employee-tasks-overview', [ReportsController::class,'employeesTaskOverview']);
+        Route::get('/report/leave',[ReportsController::class, 'leaveThisWeek']);
+        Route::get('/report/leave-by-month', [ReportsController::class, 'leaveByMonth']);
+        Route::get('/report/need-attention', [ReportsController::class, 'needAttention']);
+        Route::get('/report/summary-metrics', [ReportsController::class, 'summaryMetrics']);
     });
 
     Route::middleware('role:admin,manager,employee')-> group(function(){
