@@ -18,20 +18,41 @@ class ProjectController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        try{
-            $projects = Projects::with('members')->when(Auth::user()->role_id == 2, function ($query) {
-                $query-> where('created_by', Auth::user()->id);
-            })->get();
+        try {
+            $user   = Auth::user();
+            $status = $request->query('status');
+            $search = trim((string) $request->query('search', ''));
 
-            return response() -> json($projects,200);
+            // whitelist: anything else (including "all") means no status filter
+            $allowedStatuses = ['active', 'completed', 'on_hold']; // adjust to your real values
+            $status = in_array($status, $allowedStatuses, true) ? $status : null;
 
-        }catch( Exception $e){
-            return response() -> json(['message' => $e->getMessage() ?? 'Unable to get the list of projects.'],403);
+            $projects = Projects::with('members')
+                // manager: only their own projects (unchanged)
+                ->when($user->role_id == 2, fn($q) => $q->where('created_by', $user->id))
+                ->when($status, fn($q) => $q->where('status', $status))
+                // grouped, so the OR can't bypass the manager restriction above
+                ->when($search !== '', function ($q) use ($search) {
+                    $term = '%' . addcslashes($search, '%_\\') . '%';
+
+                    $q->where(function ($q) use ($term) {
+                        $q->where('name', 'like', $term)
+                            ->orWhereHas('members', fn($m) => $m
+                                ->where('first_name', 'like', $term)
+                                ->orWhere('last_name', 'like', $term)
+                                ->orWhere('email', 'like', $term));
+                    });
+                })
+                ->latest()
+                ->get();
+
+            return response()->json($projects, 200);
+        } catch (\Throwable $e) {
+            Log::error('projects index failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Unable to get the list of projects.'], 500);
         }
-        
     }
 
     /**
