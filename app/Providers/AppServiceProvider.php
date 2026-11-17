@@ -33,5 +33,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Projects::class,ProjectPolicy::class);
         Gate::policy(Tasks::class,TaskPolicy::class);
         Gate::policy(Leave_requests::class,LeaveRequestPolicy::class);
+        Gate::define('view-reports', fn(User $u) => in_array($u->role_id, [1, 2], true));
     }
 }

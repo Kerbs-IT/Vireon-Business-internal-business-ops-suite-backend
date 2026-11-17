@@ -78,15 +78,7 @@ Route::middleware('auth:sanctum')->group(function(){
         Route::get('/team-leave-requests',[LeaveRequestController::class, 'teamLeaveRequest']);
         Route::get('/leave-calendar',[LeaveRequestController::class,'calendar']);
 
-        // reports
-        Route::get('/report/metric-card',[ReportsController::class, 'metricCard']);
-        Route::get('/report/project-completion',[ReportsController::class,'projectCompletion']);
-        Route::get('/report/task-by-status',[ReportsController::class, 'tasksByStatus']);
-        Route::get('/report/employee-tasks-overview', [ReportsController::class,'employeesTaskOverview']);
-        Route::get('/report/leave',[ReportsController::class, 'leaveThisWeek']);
-        Route::get('/report/leave-by-month', [ReportsController::class, 'leaveByMonth']);
-        Route::get('/report/need-attention', [ReportsController::class, 'needAttention']);
-        Route::get('/report/summary-metrics', [ReportsController::class, 'summaryMetrics']);
+       
     });
 
     Route::middleware('role:admin,manager,employee')-> group(function(){
@@ -94,6 +86,18 @@ Route::middleware('auth:sanctum')->group(function(){
         Route::apiResource('leaveRequests',LeaveRequestController::class);
 
         Route::get('/leave-types', [LeaveTypeController::class,'index']);
+    });
+
+    Route::prefix('report')->middleware(['auth:sanctum', 'can:view-reports'])->group(function () {
+        // reports
+        Route::get('/metric-card', [ReportsController::class, 'metricCard']);
+        Route::get('/project-completion', [ReportsController::class, 'projectCompletion']);
+        Route::get('/task-by-status', [ReportsController::class, 'tasksByStatus']);
+        Route::get('/employee-tasks-overview', [ReportsController::class, 'employeesTaskOverview']);
+        Route::get('/leave', [ReportsController::class, 'leaveThisWeek']);
+        Route::get('/leave-by-month', [ReportsController::class, 'leaveByMonth']);
+        Route::get('/need-attention', [ReportsController::class, 'needAttention']);
+        Route::get('/summary-metrics', [ReportsController::class, 'summaryMetrics']);
     });
 
 

@@ -13,7 +13,7 @@ class DepartmentController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
         try{
@@ -22,7 +22,10 @@ class DepartmentController extends Controller
                 ['users as employee_count' => function($query){
                     $query ->wherein('role_id',[2,3]);
                 }]
-            ) -> get();
+            ) ->
+            when($request -> user()->role_id == 2, function ($query) use ($request) {
+                $query->where('manager_id', $request->user()->id);
+            }) -> get();
 
             return response()->json(["departments" => $departments],200);
 
