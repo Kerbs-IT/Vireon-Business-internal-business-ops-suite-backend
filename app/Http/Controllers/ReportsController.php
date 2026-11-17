@@ -32,12 +32,32 @@ class ReportsController extends Controller
     }
 
     /** Returns [projectId|null, departmentId|null]. "All" is simply not sent by the frontend. */
+    private const ROLE_ADMIN   = 1;
+    private const ROLE_MANAGER = 2;
+    private ?int $ownerId = null;
+
+    /** Returns [projectId|null, departmentId|null], scoped by the caller's role. */
     private function filters(Request $request): array
     {
-        return [
-            $request->filled('project_id') ? (int) $request->query('project_id') : null,
-            $request->filled('department_id') ? (int) $request->query('department_id') : null,
-        ];
+        $user = $request->user();
+
+        // Fail closed: anyone who isn't admin or manager gets nothing
+        if (!$user || !in_array($user->role_id, [self::ROLE_ADMIN, self::ROLE_MANAGER], true)) {
+            abort(403, 'You are not allowed to view reports.');
+        }
+
+        $projectId    = $request->filled('project_id') ? (int) $request->query('project_id') : null;
+        $departmentId = $request->filled('department_id') ? (int) $request->query('department_id') : null;
+
+        if ($user->role_id === self::ROLE_MANAGER) {
+            if (!$user->department_id) {
+                abort(403, 'No department assigned to this manager.');
+            }
+            $departmentId = (int) $user->department_id;
+            $this->ownerId = $user->id; // <-- add
+        }
+
+        return [$projectId, $departmentId];
     }
 
     /** Project applies directly; department goes through the assignee. */
@@ -45,6 +65,10 @@ class ReportsController extends Controller
     {
         return $query
             ->when($projectId, fn($q) => $q->where('project_id', $projectId))
+            ->when($this->ownerId, fn($q) => $q->whereHas(
+                'project',
+                fn($p) => $p->where('created_by', $this->ownerId)
+            ))
             ->when($departmentId, fn($q) => $q->whereHas(
                 'assignee',
                 fn($u) => $u->where('department_id', $departmentId)
@@ -58,6 +82,17 @@ class ReportsController extends Controller
             'user',
             fn($u) => $u->where('department_id', $departmentId)
         ));
+    }
+
+    /** Projects visible for a department: only those that have tasks assigned to it. */
+    private function scopeProjects($query, ?int $projectId, ?int $departmentId)
+    {
+        return $query
+            ->when($projectId, fn($q) => $q->where('projects.id', $projectId))
+            ->when($departmentId, fn($q) => $q->whereHas(
+                'tasks',
+                fn($t) => $this->scopeTasks($t, null, $departmentId)
+            ));
     }
 
     /** Approved leave days that fall inside [from, to]. */
@@ -122,8 +157,15 @@ class ReportsController extends Controller
         [$projectId, $departmentId] = $this->filters($request);
 
         try {
+
+
+            $user = $request->user();
+           
+
             $projects = Projects::query()
+                ->when($this->ownerId, fn($q) => $q->where('created_by', $this->ownerId))
                 ->when($projectId, fn($q) => $q->where('id', $projectId))
+                ->when($departmentId, fn($q) => $q->whereHas('tasks', fn($t) => $this->scopeTasks($t, null, $departmentId)))
                 ->withCount([
                     'tasks as total_tasks' => fn($q) => $this->scopeTasks($q, null, $departmentId),
                     'tasks as completed_tasks_count' => fn($q) => $this->scopeTasks($q, null, $departmentId)
@@ -165,7 +207,7 @@ class ReportsController extends Controller
         [$projectId, $departmentId] = $this->filters($request);
 
         try {
-            $byProject = fn($q) => $q->when($projectId, fn($q) => $q->where('project_id', $projectId));
+            $byProject = fn($q) => $this->scopeTasks($q, $projectId, null);
 
             $employees = User::query()
                 ->when($departmentId, fn($q) => $q->where('department_id', $departmentId))
