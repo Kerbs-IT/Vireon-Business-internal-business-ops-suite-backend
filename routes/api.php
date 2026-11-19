@@ -46,20 +46,20 @@ Route::middleware('auth:sanctum')->group(function(){
     // admin and manager routes
     Route::middleware('role:admin,manager')->group(function(){
         Route::apiResource('departments', DepartmentController::class);
-
+        Route::patch('/departments/{id}/restore',[DepartmentController::class,'restore']);
 
         Route::post('/employees', [EmployeeController::class, 'store']);
         Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
         Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+        Route::patch('employees/{id}/restore', [EmployeeController::class, 'restore']);
 
     
         Route::post('/deactivate/{id}',[AuthController::class,'deactivate']);
 
         Route::get('/employees', [EmployeeController::class, 'index']);
         Route::apiResource('projects',ProjectController::class);
-        // Route::post('/projects', [ProjectController::class, 'store']);
+        Route::patch('projects/{id}/restore', [ProjectController::class, 'restore']);
 
-        // Route::post('/projects/{id}/members', [ProjectController::class, 'manageMembers']);
         Route::get('/projects/{project}/tasks', [TaskController::class, 'index']);
         Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus']);
         Route::apiResource('tasks',TaskController::class);
@@ -84,6 +84,7 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::middleware('role:admin,manager,employee')-> group(function(){
         Route::get('/my-leave-request',[LeaveRequestController::class,'index']);
         Route::apiResource('leaveRequests',LeaveRequestController::class);
+        Route::put('leave-requests/{leaveRequest}', [LeaveRequestController::class, 'update']);
 
         Route::get('/leave-types', [LeaveTypeController::class,'index']);
     });

@@ -45,6 +45,7 @@ class ProjectController extends Controller
                                 ->orWhere('email', 'like', $term));
                     });
                 })
+                ->when($request->boolean('archived'), fn($q) => $q->onlyTrashed())
                 ->latest()
                 ->get();
 
@@ -64,7 +65,7 @@ class ProjectController extends Controller
         $user = Auth::user();
 
         if($user->role_id === 3){
-            return response()->json(['message' => 'You are not authorize to create a project']);
+            return response()->json(['message' => 'You are not authorize to create a project'],403);
         }
 
         try{
@@ -181,6 +182,21 @@ class ProjectController extends Controller
     public function manageMembers(Request $request)
     {
         return response()->json(['message' => 'Projects created (stub)']);
+    }
+
+    public function restore(Request $request, int $id)
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->role_id, [1, 2]), 403);
+
+        $project = Projects::onlyTrashed()->findOrFail($id);
+
+        // a manager can only restore their own projects
+        abort_if($user->role_id == 2 && $project->created_by !== $user->id, 403);
+
+        $project->restore();
+
+        return response()->json(['message' => 'Project restored.']);
     }
 
    
