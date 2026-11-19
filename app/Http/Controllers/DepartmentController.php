@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreDepartmentRequest;
 use App\Http\Requests\UpdateDepartmentRequest;
 use App\Models\Departments;
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class DepartmentController extends Controller
 {
@@ -25,7 +27,9 @@ class DepartmentController extends Controller
             ) ->
             when($request -> user()->role_id == 2, function ($query) use ($request) {
                 $query->where('manager_id', $request->user()->id);
-            }) -> get();
+            })
+            -> when($request->boolean('archived'), fn($q) => $q->onlyTrashed()) 
+            -> get();
 
             return response()->json(["departments" => $departments],200);
 
@@ -79,9 +83,41 @@ class DepartmentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Departments $departments)
+    public function destroy(Request $request, Departments $department)
     {
-        //
-        return response()->json(['message' => 'Department created (stub)'], 201);
+        try {
+            if (!in_array($request->user()->role_id, [1], true)) {   // allow-list, admin only
+                return response()->json(['message' => 'Not authorized.'], 403);
+            }
+
+            // $count = User::where('department_id', $departments->id)->count();
+            // if ($count > 0) {
+            //     return response()->json([
+            //         'message' => "Cannot archive: {$count} employee(s) still belong to this department. Reassign them first.",
+            //     ], 422);
+            // }
+
+            $department->delete();
+
+            return response()->json(['message' => 'Department archived.']);
+        } catch (\Throwable $e) {
+            Log::error('Archive department failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Unable to archive the department.'], 500);
+        }
+    }
+
+    public function restore(Request $request, int $id)
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->role_id, [1]), 403);
+
+        $department = Departments::onlyTrashed()->findOrFail($id);
+
+        // a manager can only restore their own projects
+        abort_if($user->role_id == 2 && $department->created_by !== $user->id, 403);
+
+        $department->restore();
+
+        return response()->json(['message' => 'Department restored.']);
     }
 }

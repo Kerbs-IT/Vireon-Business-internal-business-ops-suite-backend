@@ -31,7 +31,16 @@ class ProjectRequest extends FormRequest
             'status' => ['required', Rule::in(['active','completed','on_hold',])],
             'end_date' => ['nullable','date', $this->isMethod('post') ? 'after_or_equal:today' : 'sometimes',],
             'members'   => ['required', 'array', 'min:1'],
-            'members.*' => ['integer', 'distinct', 'exists:users,id'],
+            'members.*' => [
+                'integer',
+                Rule::exists('users', 'id')->where(function ($q) {
+                    $user = $this->user();
+                    $q->where('role_id', '!=', 1); // never admins
+                    if ($user->role_id == 2) {
+                        $q->where('department_id', $user->department_id);
+                    }
+                }),
+            ],
         ];
     }
 }

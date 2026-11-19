@@ -7,6 +7,8 @@ use App\Models\Leave_requests;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 use function Illuminate\Support\now;
 
@@ -61,15 +63,33 @@ class LeaveRequestController extends Controller
      */
     public function update(LeaveRequest $request, Leave_requests $leaveRequest)
     {
-        try{
-            $leaveRequest->update($request->validated());
-
-            return response()->json(['leaveRequest' => $leaveRequest],200);
-            
-        }catch(Exception $e){
-            return response()->json(['message' => $e->getMessage()], 500);
+        // only the owner can edit
+        if ((int) $leaveRequest->user_id !== (int) $request->user()->id) {
+            return response()->json(['message' => 'Not authorized.'], 403);
         }
-        
+
+        try {
+            return DB::transaction(function () use ($request, $leaveRequest) {
+                // re-read with a lock so an approval can't slip in between the check and the update
+                $leave = Leave_requests::lockForUpdate()->findOrFail($leaveRequest->id);
+
+                if ($leave->status !== 'pending') {
+                    return response()->json([
+                        'message' => 'This request was already reviewed and can no longer be edited.',
+                    ], 409);
+                }
+
+                $leave->update($request->validated());
+
+                return response()->json([
+                    'message'      => 'Leave request updated.',
+                    'leaveRequest' => $leave->fresh('leave_type'),
+                ], 200);
+            });
+        } catch (\Throwable $e) {
+            Log::error('leave update failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Unable to update the leave request.'], 500);
+        }
     }
 
     /**
