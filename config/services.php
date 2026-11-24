@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'ai' => [
+        'base_url'         => env('AI_BASE_URL'),
+        'key'              => env('AI_API_KEY'),
+        'model'            => env('AI_MODEL'),
+        'router_model' => env('AI_ROUTER_MODEL'),
+        'reasoning_effort' => env('AI_REASONING_EFFORT'), // leave empty for Groq
+        'timeout'          => 30,
+    ],
 ];

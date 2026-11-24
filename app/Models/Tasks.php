@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Observers\TaskObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[ObservedBy([TaskObserver::class])]
 class Tasks extends Model
 {
     //
@@ -16,7 +19,8 @@ class Tasks extends Model
         'assigned_to',
         'status',
         'priority',
-        'due_date'
+        'due_date',
+        'completed_at'
     ];
 
     public function project(){

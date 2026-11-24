@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Hidden(['password', 'remember_token'])]
@@ -70,5 +71,10 @@ class User extends Authenticatable
     }
     public function tasks(){
         return $this->hasMany(Tasks::class,'assigned_to','id');
+    }
+
+    public function isManager(){
+       
+        return Auth::user()->role->name === 'manager' ? true : false;
     }
 }
