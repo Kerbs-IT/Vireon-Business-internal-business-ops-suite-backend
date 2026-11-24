@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Observers\ProjectObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Override;
 
+// add a observer to store in the activities table
+#[ObservedBy([ProjectObserver::class])]
 class Projects extends Model
 {
     //

@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\AIController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LeaveRequestController;
@@ -87,6 +90,10 @@ Route::middleware('auth:sanctum')->group(function(){
         Route::put('leave-requests/{leaveRequest}', [LeaveRequestController::class, 'update']);
 
         Route::get('/leave-types', [LeaveTypeController::class,'index']);
+
+        // activities log
+        Route::get('activities', [ActivityController::class, 'index']);
+        Route::get('dashboard', [DashboardController::class, 'index']);
     });
 
     Route::prefix('report')->middleware(['auth:sanctum', 'can:view-reports'])->group(function () {
@@ -105,6 +112,8 @@ Route::middleware('auth:sanctum')->group(function(){
 
     // Employee-only-ish (any authenticated user files their own leave)
     Route::post('/leave-requests', [LeaveRequestController::class, 'store']);
+    Route::middleware('auth')->get('/ai/weekly-summary', [AIController::class, 'weeklySummary']);
+    Route::middleware(['auth', 'throttle:20,1'])->post('/ai/query', [AIController::class, 'query']);
 });
 
 Route::post('/login',[AuthController::class,'login']);

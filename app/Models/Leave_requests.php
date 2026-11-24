@@ -2,9 +2,14 @@
 
 namespace App\Models;
 
+use App\Observers\LeaveRequestObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Override;
+
+
+#[ObservedBy([LeaveRequestObserver::class])]
 
 class Leave_requests extends Model
 {
