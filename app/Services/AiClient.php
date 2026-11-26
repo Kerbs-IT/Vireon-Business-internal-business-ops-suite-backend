@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AiClient
 {
@@ -27,6 +28,11 @@ class AiClient
                 && in_array($e->response->status(), [429, 500, 503]))
             ->post(rtrim(config('services.ai.base_url'), '/') . '/chat/completions', $body)
             ->throw();
+
+        if ($response->json('choices.0.finish_reason') === 'length') {
+            Log::warning('AI reply was cut off (max_tokens too low)', ['usage' => $response->json('usage')]);
+            throw new \RuntimeException('AI reply was truncated');
+        }
 
         return trim($response->json('choices.0.message.content') ?? '');
     }

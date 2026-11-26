@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\AiClient;
+use App\Services\AssistantInfo;
 use App\Services\QueryLookups;
 use App\Services\QueryRouter;
 use App\Services\WeeklySummaryBuilder;
@@ -76,21 +77,61 @@ class AIController extends Controller
     }
 
     // in AIController
-    public function query(Request $request, QueryRouter $router, QueryLookups $lookups, AiClient $ai)
+    public function query(Request $request, QueryRouter $router, QueryLookups $lookups, AiClient $ai, WeeklySummaryBuilder $summaryBuilder, AssistantInfo $info)
     {
-        $data  = $request->validate(['question' => 'required|string|max:300']);
+        $data = $request->validate([
+            'question'  => 'required|string|max:300',
+            'history'   => 'nullable|array|max:3',
+            'history.*' => 'string|max:300',
+        ]);
         $user  = $request->user();
         $today = today();
 
         try {
-            $route = $router->classify($data['question']);
+            $route = $router->classify($data['question'], $data['history'] ?? []);
 
             if ($route['intent'] === 'unsupported') {
                 return response()->json([
-                    'answer' => "I can't answer that yet. I can help with your overdue tasks, tasks due this week, leave balance, project status, and who is on leave.",
+                    'answer' => "I can't answer that yet. I can help with your tasks (overdue, due dates, by project, priority), leave (balance, requests, whether you can take a date), project status and members, and who is on leave. Managers can also ask about approvals, workload, availability, and overdue tasks.",
                     'intent' => 'unsupported',
                 ]);
             }
+
+            if ($route['intent'] === 'assistant_info') {
+                return response()->json([
+                    'answer'  => $info->reply($route['params']['topic'] ?? 'about', $user),
+                    'intent'  => 'assistant_info',
+                    'status'  => 'ok',
+                    'matches' => [],
+                ]);
+            }
+            
+            if ($route['intent'] === 'weekly_summary') {
+                [$start, $end] = $this->summaryPeriod($route['params']['range'] ?? 'last_week', $today);
+                $payload = $summaryBuilder->build($user, $start, $end, $today);
+
+                if ($payload['status'] === 'no_activity') {
+                    return response()->json([
+                        'answer'  => "There is no recorded activity from {$start->format('M j')} to {$end->format('M j')}.",
+                        'intent'  => 'weekly_summary',
+                        'status'  => 'no_activity',
+                        'matches' => [],
+                    ]);
+                }
+
+                $answer = $ai->complete(
+                    file_get_contents(resource_path('prompts/weekly_summary.txt')),
+                    "DATA:\n" . json_encode($payload, JSON_UNESCAPED_UNICODE) . "\n\nWrite the summary for this period.",
+                );
+
+                return response()->json([
+                    'answer'  => $answer,
+                    'intent'  => 'weekly_summary',
+                    'status'  => 'ok',
+                    'matches' => [],
+                ]);
+            }
+
 
             $payload = $lookups->run($route['intent'], $user, $route['params'], $today);
 
@@ -110,5 +151,16 @@ class AIController extends Controller
             // Lets the frontend render clickable buttons when the AI asks "which project?"
             'matches' => $payload['status'] === 'needs_clarification' ? $payload['result']['matches'] : [],
         ]);
+    }
+
+    private function summaryPeriod(string $range, Carbon $today): array
+    {
+        return match ($range) {
+            'this_week'    => [$today->copy()->startOfWeek(), $today->copy()],
+            'last_2_weeks' => [$today->copy()->subWeeks(2)->startOfWeek(), $today->copy()->subWeek()->endOfWeek()],
+            'this_month'   => [$today->copy()->startOfMonth(), $today->copy()],
+            'last_month'   => [$today->copy()->subMonthNoOverflow()->startOfMonth(), $today->copy()->subMonthNoOverflow()->endOfMonth()],
+            default        => [$today->copy()->subWeek()->startOfWeek(), $today->copy()->subWeek()->endOfWeek()],
+        };
     }
 }
